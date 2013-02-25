@@ -8,7 +8,8 @@
 *********************************************************************-}
 module Agencement where
 
-import Data.List
+import Data.List 
+import Data.Maybe
 
 data DIRECTION = Droite | Gauche
                  deriving (Eq,Show,Read,Ord)
@@ -191,7 +192,7 @@ lesBlocs axe ag = lesBlocs' axe ag (lesComposants ag)
 
 -- À réaliser
 -- retourne la liste de des composants de l'agencement qui sont du type ty
-lesComposantsDuType ag ty = []
+lesComposantsDuType ag ty = [s | s<- (lesComposants ag), (leType s) == ty]
 
 -- est vrai si et seulement si l'agencement ag possède tous les types de composants de la liste types
 possedeTypes ag types = all ((0 < ) . length . (lesComposantsDuType ag)) types
@@ -213,17 +214,31 @@ tousLesBlocs ag = differentsTous (lesBlocs X ag) (lesBlocs Y ag)  `union`
 -- Elle retourne vrai si et seulement si,
 -- soit le bloc n'a pas de composants en commun avec un des blocs de bloc,
 -- soit il est inclus dans l'un d'entre eux.
-blocIsole :: [BLOC] -> BLOC -> Bool
-blocIsole blocs bloc = False
+--blocIsole :: [BLOC] -> BLOC -> Bool
+blocIsole blocs bloc = (null (intersect (lesComposantsDuBloc bloc) (foldr (++) [] (map lesComposantsDuBloc blocs)))) || (any (==bloc) (map (intersectionBlocs bloc) blocs))
 
-blocsIsoles  ag = filter (blocIsole blocs) blocs where blocs = tousLesBlocs ag
+
+
 
 -- À réaliser
 -- retourne un bloc formé par la connection, si possible, de bloc à l'un des blocs de blocs
 -- (deux blocs se connectent s'ils ont un composant en commun)
 -- sinon retourne bloc lui-même
 connecterUn :: [BLOC] -> BLOC -> BLOC
-connecterUn blocs bloc = bloc
+connecterUn blocs bloc = let b = find (composantCommuns bloc) blocs in 
+                       if isNothing b  then 
+                           bloc
+                       else
+                           unionBlocs (fromJust b) bloc
+
+
+
+
+
+
+
+composantCommuns :: BLOC -> BLOC -> Bool
+composantCommuns b1 b2 = not (null (intersect (lesComposantsDuBloc b1) (lesComposantsDuBloc b2)))
 
 -- retourne tous les blocs connectés
 -- si b1 est connecté à b2 alors b2 est aussi connecté à b1, cette connexion figure en double
@@ -241,4 +256,4 @@ tousLesBlocsConnectes ag =
 -- À réaliser
 -- retourne la liste des listes des identificateurs des composants d'une liste de blocs
 lesIds :: [BLOC] -> [[String]]
-lesIds blocs = []
+lesIds blocs = map (map lIdComposant) (map lesComposantsDuBloc blocs)
