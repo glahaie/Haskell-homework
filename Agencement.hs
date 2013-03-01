@@ -1,11 +1,24 @@
-{-*********************************************************************
+{-*****************************************************************************
 * Cours		: INF2160
-* Session	: Hiver 20013
+* Session	: Hiver 2013
 * Objet		: Travail pratique 1
 * Titre		: Module de gestion d'un agencement
 * 
 * Auteur	: Bernard Lefebvre
-*********************************************************************-}
+* 
+* Travail effectué par Guillaume Lahaie
+*                      LAHG04077707
+* Dernière modification: 1er mars 2013
+*
+* Le fichier contient la définition des fonctions lesIds, lesComposantsDuType,
+* blocIsole et connecterUn. J'ai aussi défini une fonction composantsCommun, qui
+* permet de vérifier si deux blocs ont un composant en commun. Pour la fonction
+* connecterUn, j'utilise la fonction Find qui retourne un resultat Maybe. Pour
+* travailler avec ce résultat, j'utilise les fonctions du module Maybe, et
+* donc je l'importe.
+*******************************************************************************
+-}
+
 module Agencement where
 
 import Data.List 
@@ -190,9 +203,19 @@ lesBlocs' axe ag (compo:compos) =
 -- la fonction retourne la liste des blocs sur l'axe X ou sur l'axe Y
 lesBlocs axe ag = lesBlocs' axe ag (lesComposants ag)
 
--- À réaliser
+
+
+
 -- retourne la liste de des composants de l'agencement qui sont du type ty
+--
+-- Pour obtenir la liste demandée, je part de la liste des composants de
+-- l'agencement à l'aide de la fonction lesComposants. Ensuite, je filtre
+-- pour include seulement les éléments de type ty, tout d'abord en obtenant
+-- le type d'un composant à l'aide de leType, et en comparant le résultat
+-- avec ty. On pourrait le faire aussi avec un filter.
 lesComposantsDuType ag ty = [s | s<- (lesComposants ag), (leType s) == ty]
+
+
 
 -- est vrai si et seulement si l'agencement ag possède tous les types de composants de la liste types
 possedeTypes ag types = all ((0 < ) . length . (lesComposantsDuType ag)) types
@@ -209,36 +232,57 @@ differentsTous blocs1 blocs2 = filter (estDifferent blocs1) blocs2
 tousLesBlocs ag = differentsTous (lesBlocs X ag) (lesBlocs Y ag)  `union` 
                   differentsTous (lesBlocs Y ag) (lesBlocs X ag)
 
--- À réaliser
+
+
+
 -- blocIsole, cette fonction s'applique à une liste de blocs et à un bloc.
 -- Elle retourne vrai si et seulement si,
 -- soit le bloc n'a pas de composants en commun avec un des blocs de bloc,
 -- soit il est inclus dans l'un d'entre eux.
---blocIsole :: [BLOC] -> BLOC -> Bool
-blocIsole blocs bloc = (null (intersect (lesComposantsDuBloc bloc) (foldr (++) [] (map lesComposantsDuBloc blocs)))) || (any (==bloc) (map (intersectionBlocs bloc) blocs))
+--
+-- blocIsole vérifie les deux cas possibles décrits. Tout d'abord on vérifie
+-- si un des composants de bloc est présent dans un des blocs de bloc. Si
+-- c'est le cas, on retourne faux. 
+--
+-- Si le premier cas retourne faux, on vérifie alors le second cas. Pour ce
+-- faire, on fait l'intersection de chaque element de blocs avec bloc. On
+-- vérifie ensuite si une des intersections est identique à bloc. En effet,
+-- l'intersection de bloc avec un autre bloc ne peut contenir plus de 
+-- composants que bloc. S'il y en a moins présents, l'égalité n'est pas
+-- vérifiée.
+blocIsole :: [BLOC] -> BLOC -> Bool
+blocIsole blocs bloc =
+    not (any (estDansBlocs blocs) (lesComposantsDuBloc bloc)) ||
+    (any (==bloc) (map (intersectionBlocs bloc) blocs))
 
 
 
 
--- À réaliser
--- retourne un bloc formé par la connection, si possible, de bloc à l'un des blocs de blocs
--- (deux blocs se connectent s'ils ont un composant en commun)
+-- retourne un bloc formé par la connection, si possible, de bloc à l'un des b
+-- locs de blocs (deux blocs se connectent s'ils ont un composant en commun)
 -- sinon retourne bloc lui-même
+--
+-- J'utilise ici la fonction définie composantCommun afin d'identifier à l'aide
+-- de find le premier élément de la liste blocs qui vérifie composantCommun.
+-- A ce moment, on peut créer le nouveau bloc. À l'aide du monad Maybe, on peut
+-- identifier s'il y a deux blocs que l'on peut connecter. Si on peut le
+-- faire, j'utilise unionBlocs pour obtenir le nouveau bloc à retourner, sinon
+-- on retourne tout simplement bloc. Pour vérifier si le résultat de find est
+-- Nothing ou Just, j'utilise isNothing, et si le résultat n'est pas Nothing,
+-- j'utilise fromJust pour obtenir le bloc désigné.
 connecterUn :: [BLOC] -> BLOC -> BLOC
-connecterUn blocs bloc = let b = find (composantCommuns bloc) blocs in 
+connecterUn blocs bloc = let b = find (composantCommun bloc) blocs in 
                        if isNothing b  then 
                            bloc
                        else
                            unionBlocs (fromJust b) bloc
 
 
-
-
-
-
-
-composantCommuns :: BLOC -> BLOC -> Bool
-composantCommuns b1 b2 = not (null (intersect (lesComposantsDuBloc b1) (lesComposantsDuBloc b2)))
+-- Permet de vérifier si deux blocs ont au moins un composant en commun. On
+-- vérifie en obtenant l'intersection des deux blocs et en vérifiant si
+-- le résultat de cette intersection est vide. Si elle est vide, il n'y a
+-- donc pas de composant commun. 
+composantCommun b1 b2 = not (null (lesComposantsDuBloc (intersectionBlocs b1 b2)))
 
 -- retourne tous les blocs connectés
 -- si b1 est connecté à b2 alors b2 est aussi connecté à b1, cette connexion figure en double
@@ -253,7 +297,16 @@ tousLesBlocsConnectes ag =
       differentsTous blocs blocs
 -}
 
--- À réaliser
--- retourne la liste des listes des identificateurs des composants d'une liste de blocs
+
+
+-- retourne la liste des listes des identificateurs des composants d'une liste 
+-- de blocs
+--
+-- Pour obtenir la liste des liste de string, j'applique une composition de 
+-- fonctions sur chaque element de la liste blocs. Tout d'abord, on obtient
+-- les composants d'un bloc à l'aide de lesComposantsDuBloc, ensuite, on obtient
+-- les identificateurs à l'aide de map lIdComposant. On applique cette composition
+-- sur chaque bloc de la liste.
 lesIds :: [BLOC] -> [[String]]
-lesIds blocs = map (map lIdComposant) (map lesComposantsDuBloc blocs)
+lesIds blocs = map ((map lIdComposant).lesComposantsDuBloc) blocs
+
