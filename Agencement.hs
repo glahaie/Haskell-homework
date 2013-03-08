@@ -30,30 +30,35 @@ data DIRECTION = Droite | Gauche
 data AXE = X | Y
 	   deriving (Eq,Show,Read,Ord)
 
-data TYPECOMPOSANT = Bas | Haut | Coin | Frigidaire | LaveVaisselle | Four | TableCuisson | MicroOnde | Hotte | Cuisiniere
+data TYPECOMPOSANT = Bas | Haut | Coin | Frigidaire | LaveVaisselle | Four | 
+                     TableCuisson | MicroOnde | Hotte | Cuisiniere
 	    deriving (Eq,Show,Read,Ord)
 
 -- Une dimension s'exprime par un triplet (hauteur, lorgeur, profondeur)
 -- type DIMENSION = (Num,Num,Num)
 type DIMENSION = (Float,Float,Float)
 
--- Le type POSITION est relatif à la position d'un composant dans la pièce en fonction des coordonnées (x, y, z) de son
--- coin inférieur gauche, le constructeur Indetermine est relatif à une position non définie
+-- Le type POSITION est relatif à la position d'un composant dans la pièce en
+-- fonction des coordonnées (x, y, z) de son coin inférieur gauche, le 
+-- constructeur Indetermine est relatif à une position non définie
 data POSITION = Position {x, y, z::Float} | Indetermine
 	        deriving (Eq,Show,Read,Ord)
 
-data COMPOSANT = Meuble {lIdComposant::String, laDimension::DIMENSION, laPos::POSITION, leType::TYPECOMPOSANT} |
-                 Electro {lIdComposant::String, laDimension::DIMENSION, laPos::POSITION, leType::TYPECOMPOSANT}
+data COMPOSANT = Meuble {lIdComposant::String, laDimension::DIMENSION, 
+                         laPos::POSITION, leType::TYPECOMPOSANT} |
+                 Electro {lIdComposant::String, laDimension::DIMENSION, 
+                          laPos::POSITION, leType::TYPECOMPOSANT}
 	         deriving (Eq,Show,Read,Ord)
 
 -- Le type AXCMP permet de situer un composant le long d'un axe.
--- Pour ce nouveau type on dérive l'appartenance aux classes Read et Show seulement
+-- Pour ce nouveau type on dérive l'appartenance aux classes Read et Show
+-- seulement
 newtype AXCMP = AxCmp {leCouple::(AXE,COMPOSANT)}
     deriving (Show,Read)
 
--- On définit l'appartenance de AXCMP à la classe Eq, seul le second élément du couple
--- sert à déterminer l'égalité, les couples sont égaux si et seulemenet si les composants sont
--- egaux
+-- On définit l'appartenance de AXCMP à la classe Eq, seul le second élément
+-- du couple sert à déterminer l'égalité, les couples sont égaux si et seulement
+-- si les composants sont egaux
 instance Eq AXCMP where
     AxCmp c1 == AxCmp c2 = snd c1 == snd c2
 
@@ -61,8 +66,9 @@ instance Eq AXCMP where
 newtype BLOC = Bloc {lesElems::[AXCMP]}
     deriving (Show,Read)
 
--- Deux blocs seront égaux si et seulement si leurs conposants respectifs sont en même nombre
--- présents dans les 2 blocs peu importe leur ordre et peu importe leur sitation sur un axe
+-- Deux blocs seront égaux si et seulement si leurs conposants respectifs sont
+-- en même nombre présents dans les 2 blocs peu importe leur ordre et peu 
+-- importe leur sitation sur un axe
 instance Eq BLOC where
     Bloc bs1 == Bloc bs2 = 
         (foldr (&&) True (map (\bx -> elem bx bs2) bs1)) &&
@@ -77,16 +83,18 @@ lesComposantsDuBloc (Bloc cs) = (map (snd.leCouple) cs)
 faireBloc axe cs = Bloc (map (\c -> AxCmp (axe,c)) cs)
 
 -- intersectionBlocs bloc1 bloc2
--- retourne le bloc intersection de bloc1 et de bloc2, les composants communs aux 2 blocs
--- se retrouvent dans l'intersection indépendemment de l'axe sur lequel ils se trouvent
--- puisque l'égalité au niveau des blocs n'utilise pas ce critère
+-- retourne le bloc intersection de bloc1 et de bloc2, les composants communs
+-- aux 2 blocs se retrouvent dans l'intersection indépendemment de l'axe sur 
+-- lequel ils se trouvent puisque l'égalité au niveau des blocs n'utilise pas 
+-- ce critère
 intersectionBlocs (Bloc b1) (Bloc b2) = Bloc (intersect b1 b2)
 
 -- unionBlocs bloc1 bloc2 
 -- retourne un bloc formé des composants de bloc1 avec ceux de bloc2
 unionBlocs (Bloc b1) (Bloc b2) = Bloc (union b1 b2)
 
--- dans un agencement, en principe, les composants de doivent pas avoir de position indéterminée
+-- dans un agencement, en principe, les composants de doivent pas avoir de 
+-- position indéterminée
 data AGENCEMENT = Agencement {lIdAgencement::String, lesComposants::[COMPOSANT]}
 	          deriving (Eq,Show,Read,Ord)
 
@@ -128,9 +136,11 @@ lesElectros ag = filter estElectro (lesComposants ag)
 lesMeubles ag = filter estMeuble (lesComposants ag)
                                      
 -- estVoisin' dir axe  c1 c2
--- retourne Maybe True si c1 est un voisin dans la direction dir de c2 sur l'axe axe
--- retourne Maybe False si c1 n'est pas un voisin dans la direction dir de c2 sur l'axe axe
--- reourne Nothing si une des positions n'est pas définie
+-- retourne Maybe True si c1 est un voisin dans la direction dir de c2 sur l'axe
+-- axe 
+-- retourne Maybe False si c1 n'est pas un voisin dans la direction dir de c2 
+-- sur l'axe axe
+-- retourne Nothing si une des positions n'est pas définie
 estVoisin' Droite axe c1 c2 = estVoisin' Gauche axe c2 c1
 estVoisin' Gauche axe c1 c2 = do
   x1 <- laX c1
@@ -155,14 +165,16 @@ estVoisin dir axe c1 c2 = estVoisin' dir axe c1 c2 == Just True
 -- estVoisin est une fonction de voisinage
 -- ag est un agencement
 -- compo est un composant 
--- la fonction retourne peut-être (Maybe) l'élément de l'agencement voisin (au sens de estVoisin) du composant
+-- la fonction retourne peut-être (Maybe) l'élément de l'agencement voisin
+-- (au sens de estVoisin) du composant
 leVoisin estVoisin ag compo = find (estVoisin compo) (lesComposants ag)
 
 -- leBloc' estVoisin ag compo
 -- estVoisin est une fonction de voisinage
 -- ag est un agencement
 -- compo est un composant
--- la fonction retourne la liste des composants qui sont voisins (au sens de la fonction estVoisin) du composant
+-- la fonction retourne la liste des composants qui sont voisins (au sens de la
+-- fonction estVoisin) du composant
 leBloc' estVoisin ag compo = 
     case leVoisin estVoisin ag compo of
       Nothing -> []
@@ -172,22 +184,26 @@ leBloc' estVoisin ag compo =
 -- ag est un agencement
 -- compo est un composant
 -- ax est un axe (X ou Y)
--- la fonction retourne un bloc formé des composants qui forment un bloc avec compo sur l'axe ax 
+-- la fonction retourne un bloc formé des composants qui forment un bloc avec
+-- compo sur l'axe ax 
 leBloc ax ag compo = 
-    faireBloc ax ((leBloc' (estVoisin Gauche ax) ag compo) ++ [compo] ++ (leBloc' (estVoisin Droite ax) ag compo))
+    faireBloc ax ((leBloc' (estVoisin Gauche ax) ag compo) ++ [compo] ++ 
+                  (leBloc' (estVoisin Droite ax) ag compo))
 
 sontDansMemeBloc ag c1 c2 = elem c2 (lesComposantsDuBloc (leBloc X ag c1)) || 
                             elem c2 (lesComposantsDuBloc (leBloc Y ag c1))
 
 -- estDansBlocs blocs c 
--- retourne vrai si le composant c se trouve dans un des blocs de la liste de blocs blocs
+-- retourne vrai si le composant c se trouve dans un des blocs de la liste de
+-- blocs blocs
 estDansBlocs blocs c = any (elem c) (map lesComposantsDuBloc blocs)
 
 -- lesBloc' axe ag compos
 -- axe est X ou Y
 -- ag est un agencement
 -- composant est une liste de composants
--- la fonction retourne la liste des blocs sur l'axe formés avec chacun des composants de compos
+-- la fonction retourne la liste des blocs sur l'axe formés avec chacun des 
+-- composants de compos
 lesBlocs' axe ag [] = []
 lesBlocs' axe ag (compo:compos) =
     if estDansBlocs blocs compo then
@@ -203,9 +219,9 @@ lesBlocs' axe ag (compo:compos) =
 -- la fonction retourne la liste des blocs sur l'axe X ou sur l'axe Y
 lesBlocs axe ag = lesBlocs' axe ag (lesComposants ag)
 
-
-
-
+-- lesComposantsDuType ag ty
+-- ag est un agencement
+-- ty est un type de composant
 -- retourne la liste de des composants de l'agencement qui sont du type ty
 --
 -- Pour obtenir la liste demandée, je part de la liste des composants de
@@ -215,9 +231,8 @@ lesBlocs axe ag = lesBlocs' axe ag (lesComposants ag)
 -- avec ty. On pourrait le faire aussi avec un filter.
 lesComposantsDuType ag ty = [s | s<- (lesComposants ag), (leType s) == ty]
 
-
-
--- est vrai si et seulement si l'agencement ag possède tous les types de composants de la liste types
+-- est vrai si et seulement si l'agencement ag possède tous les types de 
+-- composants de la liste types
 possedeTypes ag types = all ((0 < ) . length . (lesComposantsDuType ag)) types
 
 -- retourne vrai si bloc n'est strictement inclus dans aucun des blocs de blocs
@@ -232,9 +247,9 @@ differentsTous blocs1 blocs2 = filter (estDifferent blocs1) blocs2
 tousLesBlocs ag = differentsTous (lesBlocs X ag) (lesBlocs Y ag)  `union` 
                   differentsTous (lesBlocs Y ag) (lesBlocs X ag)
 
-
-
-
+-- blocIsole blocs bloc
+-- blocs est une liste de blocs
+-- bloc est un bloc
 -- blocIsole, cette fonction s'applique à une liste de blocs et à un bloc.
 -- Elle retourne vrai si et seulement si,
 -- soit le bloc n'a pas de composants en commun avec un des blocs de bloc,
@@ -255,9 +270,9 @@ blocIsole blocs bloc =
     not (any (estDansBlocs blocs) (lesComposantsDuBloc bloc)) ||
     (any (==bloc) (map (intersectionBlocs bloc) blocs))
 
-
-
-
+-- connecterUn blocs bloc
+-- blocs est une liste de blocs
+-- bloc est un bloc
 -- retourne un bloc formé par la connection, si possible, de bloc à l'un des b
 -- locs de blocs (deux blocs se connectent s'ils ont un composant en commun)
 -- sinon retourne bloc lui-même
@@ -277,7 +292,9 @@ connecterUn blocs bloc = let b = find (composantCommun bloc) blocs in
                        else
                            unionBlocs (fromJust b) bloc
 
-
+-- composantCommun b1 b2
+-- b1 et b2 sont deux blocs
+-- retourne True ou False
 -- Permet de vérifier si deux blocs ont au moins un composant en commun. On
 -- vérifie en obtenant l'intersection des deux blocs et en vérifiant si
 -- le résultat de cette intersection est vide. Si elle est vide, il n'y a
@@ -285,8 +302,8 @@ connecterUn blocs bloc = let b = find (composantCommun bloc) blocs in
 composantCommun b1 b2 = not (null (lesComposantsDuBloc (intersectionBlocs b1 b2)))
 
 -- retourne tous les blocs connectés
--- si b1 est connecté à b2 alors b2 est aussi connecté à b1, cette connexion figure en double
--- on la supprime à l'aide de nub
+-- si b1 est connecté à b2 alors b2 est aussi connecté à b1, cette connexion
+-- figure en double on la supprime à l'aide de nub
 connecterTous blocs = (nub . map (connecterUn blocs)) blocs
 
 {-
@@ -298,7 +315,8 @@ tousLesBlocsConnectes ag =
 -}
 
 
-
+-- lesIds blocs
+-- blocs est une liste de blocs
 -- retourne la liste des listes des identificateurs des composants d'une liste 
 -- de blocs
 --
