@@ -54,11 +54,11 @@ agDeux = Agencement "deux" [b1,b3]
 
 
 testXX m p = if p then do
-		       putStr ("\n" ++ m ++ ": ")
+		       putStr (m ++ ": ")
 		       putStr "OK\n"
 		       return 1 
 	     else do
-		  putStr ("\n" ++ m ++ ": ")
+		  putStr ( m ++ ": ")
 		  putStr "ERREUR\n"
 		  return 0
 

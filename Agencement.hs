@@ -8,14 +8,15 @@
 * 
 * Travail effectué par Guillaume Lahaie
 *                      LAHG04077707
-* Dernière modification: 1er mars 2013
+* Dernière modification: 8 mars 2013
 *
 * Le fichier contient la définition des fonctions lesIds, lesComposantsDuType,
 * blocIsole et connecterUn. J'ai aussi défini une fonction composantsCommun, qui
 * permet de vérifier si deux blocs ont un composant en commun. Pour la fonction
 * connecterUn, j'utilise la fonction Find qui retourne un resultat Maybe. Pour
 * travailler avec ce résultat, j'utilise les fonctions du module Maybe, et
-* donc je l'importe.
+* donc je l'importe. Les resultats des tests sur les fonctions definies est 
+* disponible dans le listing remis.
 *******************************************************************************
 -}
 
